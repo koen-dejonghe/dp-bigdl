@@ -1,13 +1,13 @@
 package botkop.dp.bigdl
 
 import com.intel.analytics.bigdl.nn._
-import com.intel.analytics.bigdl.nn.abstractnn.{AbstractModule, Activity}
 import com.intel.analytics.bigdl.optim._
 import com.intel.analytics.bigdl.tensor.Tensor
+import com.intel.analytics.bigdl.tensor.TensorNumericMath.TensorNumeric.NumericFloat
 
 import scala.util.Random
 
-object LeNet extends App {
+object MyLeNet extends App {
 
   val numSamples = 16
   val numClasses = 10
@@ -33,49 +33,23 @@ object LeNet extends App {
     .add(LogSoftMax())
 
   val criterion = ClassNLLCriterion[Float]()
-  val optimizer = new Adam[Float](learningRate = 1e-2)
-
-
-  def feval(x: Tensor[Float]): (Float, Tensor[Float]) = {
-    val r0 = model.forward(x)
-    val loss = criterion.forward(r0, target)
-    println(loss)
-    val dl = criterion.backward(r0, target)
-    val dr0 = model.backward(input, dl)
-    (loss, dr0.toTensor)
-  }
-
+  val optimizer = new SGD[Float](learningRate = 1e-2)
 
   for (_ <- 1 to 1000) {
 
-    /*
+    model.zeroGradParameters()
     val r0 = model.forward(input)
     val loss = criterion.forward(r0, target)
     println(loss)
     val dl = criterion.backward(r0, target)
     val dr0 = model.backward(input, dl)
 
+
     val ps = model.parameters()._1
     val dps = model.parameters()._2
-
     ps.zip(dps).foreach { case (p: Tensor[Float], dp: Tensor[Float]) =>
-      p.sub(lr, dp)
+        val a: (Tensor[Float], Array[Float]) = optimizer.optimize(_ => (loss, dp), p)
     }
-    model.zeroGradParameters()
-    */
-
-
-    model.modules.foreach { f: AbstractModule[Activity, Activity, Float] =>
-      optimizer.optimize(f)
-    }
-
-    optimizer.optimize(feval, input)
-
-//    val ps = model.parameters()._1
-//    val dps = model.parameters()._2
-//    ps.zip(dps).foreach { case (p: Tensor[Float], dp: Tensor[Float]) =>
-//      p.sub(dp)
-//    }
 
   }
 
